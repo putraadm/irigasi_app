@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "535366638451",
+    "project_id": "iotirigasi-fdeba",
+    "storage_bucket": "iotirigasi-fdeba.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:535366638451:android:8c6dd9132ec9fc6581c306",
+        "android_client_info": {
+          "package_name": "com.polinema.irigasi"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyARExsmGMY6SXGT3iXKU2Y2552VPhIWe8Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
