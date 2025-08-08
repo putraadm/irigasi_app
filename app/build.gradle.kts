@@ -1,8 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-//    alias(libs.plugins.kotlin.compose)
-//    id("com.android.application")
     id("com.google.gms.google-services")
 }
 
@@ -70,6 +68,8 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.ui.tooling.preview)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.material.icons.extended)
+
 
     // UI Preview tools
     debugImplementation(libs.ui.tooling)

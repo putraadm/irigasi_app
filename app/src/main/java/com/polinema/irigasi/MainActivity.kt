@@ -9,10 +9,22 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Thermostat
+import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.material.icons.filled.Science
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import com.google.firebase.database.*
 
 @Composable
@@ -87,7 +99,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun MainScreen(node1Data: NodeData, node2Data: NodeData, avgData: NodeData) {
+fun MainScreen(avgData: NodeData, node1Data: NodeData, node2Data: NodeData) {
     val screens = listOf(Screen.Home, Screen.Node1, Screen.Node2)
     var currentScreen by remember { mutableStateOf<Screen>(Screen.Home) }
 
@@ -121,20 +133,144 @@ fun NodeScreen(title: String, data: NodeData) {
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
         horizontalAlignment = Alignment.Start
     ) {
-        Text(text = title, style = MaterialTheme.typography.headlineSmall)
-        Text(text = "Flow: ${data.flow ?: "-"}", style = MaterialTheme.typography.bodyMedium)
-        Text(text = "Temp: ${data.temp ?: "-"}", style = MaterialTheme.typography.bodyMedium)
-        Text(text = "Level: ${data.level ?: "-"}", style = MaterialTheme.typography.bodyMedium)
+        Text(text = title, style = MaterialTheme.typography.headlineMedium)
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            DataCard(
+                modifier = Modifier.weight(1f),
+                icon = { Icon(Icons.Filled.WaterDrop, contentDescription = "Flow", tint = Color(0xFF7EC8F5)) },
+                label = "Flow",
+                value = data.flow?.toString() ?: "-"
+            )
+            DataCard(
+                modifier = Modifier.weight(1f),
+                icon = { Icon(Icons.Filled.Thermostat, contentDescription = "Temp", tint = Color(0xFFDD7B4B)) },
+                label = "Temp",
+                value = data.temp?.toString() ?: "-"
+            )
+            DataCard(
+                modifier = Modifier.weight(1f),
+                icon = { Icon(Icons.Filled.Science, contentDescription = "Level", tint = Color(0xFF8C7BFF)) },
+                label = "Level",
+                value = data.level?.toString() ?: "-"
+            )
+        }
+
+        Text(text = "Data Over Time", style = MaterialTheme.typography.headlineSmall)
+
+        LineChart(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp),
+            dataPoints = listOf(0f, 10f, 50f, 70f, 65f, 80f, 120f, 160f, 170f)
+        )
+    }
+}
+
+@Composable
+fun DataCard(modifier: Modifier = Modifier, icon: @Composable () -> Unit, label: String, value: String) {
+    Card(
+        modifier = modifier
+            .height(120.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F8FF))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(vertical = 16.dp),
+            verticalArrangement = Arrangement.SpaceAround,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            icon()
+            Text(text = label, style = MaterialTheme.typography.bodyMedium)
+            Text(text = value, style = MaterialTheme.typography.headlineSmall)
+        }
+    }
+}
+
+@Composable
+fun LineChart(modifier: Modifier = Modifier, dataPoints: List<Float>) {
+    Canvas(modifier = modifier.padding(16.dp)) {
+        val width = size.width
+        val height = size.height
+        val padding = 5.dp.toPx()
+
+        // Draw background rounded rect
+        drawRoundRect(
+            color = Color(0xFFF8F8FF),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(16.dp.toPx(), 16.dp.toPx()),
+            size = size
+        )
+
+        // Draw grid lines
+        val gridLines = 5
+        val stepY = (height - 2 * padding) / gridLines
+        val stepX = (width - 2 * padding) / (dataPoints.size - 1)
+
+        val gridColor = Color.LightGray.copy(alpha = 0.3f)
+        for (i in 0..gridLines) {
+            val y = padding + i * stepY
+            drawLine(
+                color = gridColor,
+                start = Offset(padding, y),
+                end = Offset(width - padding, y),
+                strokeWidth = 1f
+            )
+        }
+
+        // Draw line chart
+        val maxValue = dataPoints.maxOrNull() ?: 0f
+        if (maxValue == 0f) return@Canvas
+
+        val points = dataPoints.mapIndexed { index, value ->
+            Offset(
+                x = padding + index * stepX,
+                y = height - padding - (value / maxValue) * (height - 2 * padding)
+            )
+        }
+
+        val path = Path().apply {
+            moveTo(points.first().x, points.first().y)
+            for (point in points.drop(1)) {
+                lineTo(point.x, point.y)
+            }
+        }
+
+        drawPath(
+            path = path,
+            color = Color(0xFF8C7BFF),
+            style = Stroke(width = 6f, cap = StrokeCap.Round)
+        )
+
+        // Draw fill under the line
+        val fillPath = Path().apply {
+            moveTo(points.first().x, height - padding)
+            lineTo(points.first().x, points.first().y)
+            for (point in points.drop(1)) {
+                lineTo(point.x, point.y)
+            }
+            lineTo(points.last().x, height - padding)
+            close()
+        }
+
+        drawPath(
+            path = fillPath,
+            color = Color(0xFF8C7BFF).copy(alpha = 0.2f)
+        )
     }
 }
 
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true)
 @Composable
 fun PreviewMainScreen() {
-    val avgData = NodeData(flow = 13.65, temp = 23.8, level = 8.15)
+    val avgData = NodeData(flow = 0.0, temp = 27.4, level = 197.3)
     val node1Data = NodeData(flow = 12.3, temp = 25.6, level = 7.8)
     val node2Data = NodeData(flow = 15.0, temp = 22.0, level = 8.5)
     MainScreen(avgData, node1Data, node2Data)
